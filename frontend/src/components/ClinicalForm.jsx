@@ -32,7 +32,7 @@ const initialFormState = {
   doctor_notes: ''
 };
 
-export default function ClinicalForm({ patientContext, onSubmit }) {
+export default function ClinicalForm({ patientContext, onSubmit, resetTrigger }) {
   const [formData, setFormData] = useState(initialFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -149,6 +149,55 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
     return () => clearTimeout(timeoutId);
   }, [formData]);
 
+  // Reset form when resetTrigger changes
+  useEffect(() => {
+    if (resetTrigger > 0) {
+      // Create a deep copy of initialFormState to ensure React detects the change
+      setFormData({
+        chief_complaint: '',
+        hpi: {
+          location: [],
+          radiation: [],
+          quality: [],
+          quality_other: '',
+          duration: '',
+          severity: 5,
+          timing: '',
+          aggravating_factors: [],
+          relieving_factors: []
+        },
+        associated_symptoms: [],
+        physical_exam: {
+          general: [],
+          vitals: {
+            bp: '',
+            hr: '',
+            temp: '',
+            spo2: '',
+            rr: ''
+          },
+          cardiovascular: [],
+          respiratory: []
+        },
+        doctor_notes: ''
+      });
+      setErrors({});
+      setTouched({});
+      setShowClearConfirm(false);
+      setShowDraftRecovery(false);
+      setLastSaved(null);
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(DRAFT_CHECK_KEY);
+
+      // Focus on chief complaint field after clearing
+      setTimeout(() => {
+        if (chiefComplaintRef.current) {
+          chiefComplaintRef.current.focus();
+        }
+      }, 100);
+    }
+  }, [resetTrigger]);
+
   const validate = useCallback(() => {
     const newErrors = {};
     if (!formData.chief_complaint.trim()) {
@@ -183,7 +232,35 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
   };
 
   const handleClear = () => {
-    setFormData(initialFormState);
+    // Create a deep copy of initialFormState to ensure React detects the change
+    setFormData({
+      chief_complaint: '',
+      hpi: {
+        location: [],
+        radiation: [],
+        quality: [],
+        quality_other: '',
+        duration: '',
+        severity: 5,
+        timing: '',
+        aggravating_factors: [],
+        relieving_factors: []
+      },
+      associated_symptoms: [],
+      physical_exam: {
+        general: [],
+        vitals: {
+          bp: '',
+          hr: '',
+          temp: '',
+          spo2: '',
+          rr: ''
+        },
+        cardiovascular: [],
+        respiratory: []
+      },
+      doctor_notes: ''
+    });
     setErrors({});
     setTouched({});
     setShowClearConfirm(false);

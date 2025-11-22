@@ -58,6 +58,9 @@ function App() {
   // Confirmation dialog state
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  // Reset trigger for form component
+  const [resetTrigger, setResetTrigger] = useState(0);
+
   // Reference to insights section for scrolling
   const insightsRef = useRef(null);
 
@@ -226,8 +229,8 @@ function App() {
     setAnalysisProgress(null);
     setShowResetConfirm(false);
 
-    // Clear localStorage form draft
-    localStorage.removeItem('clinical_form_draft');
+    // Trigger form reset by incrementing the resetTrigger
+    setResetTrigger(prev => prev + 1);
 
     // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -453,6 +456,7 @@ function App() {
                 <ClinicalForm
                   patientContext={patientData}
                   onSubmit={handleFormSubmit}
+                  resetTrigger={resetTrigger}
                 />
               </div>
             </div>
