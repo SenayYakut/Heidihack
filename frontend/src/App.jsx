@@ -228,6 +228,7 @@ function App() {
     setError(null);
     setAnalysisProgress(null);
     setShowResetConfirm(false);
+    setIsLoading({ patient: false, analysis: false });
 
     // Trigger form reset by incrementing the resetTrigger
     setResetTrigger(prev => prev + 1);
@@ -330,7 +331,7 @@ function App() {
       {/* =================================================================== */}
       {/* HEADER */}
       {/* =================================================================== */}
-      <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
@@ -416,9 +417,9 @@ function App() {
       )}
 
       {/* =================================================================== */}
-      {/* PATIENT CARD (Sticky) */}
+      {/* PATIENT CARD */}
       {/* =================================================================== */}
-      <div className="bg-gray-100 border-b border-gray-200 sticky top-16 z-30">
+      <div className="bg-gray-100 border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <PatientCard />
         </div>
