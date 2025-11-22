@@ -26,15 +26,55 @@ export default function PatientCard() {
 
   if (loading) {
     return (
-      <div className="card p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="h-8 bg-gray-200 rounded w-1/2 mb-6"></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
+      <div className="card" aria-busy="true" aria-label="Loading patient information">
+        {/* Skeleton Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="h-6 skeleton w-48 mb-2"></div>
+              <div className="h-4 skeleton w-64"></div>
+            </div>
+            <div className="h-6 skeleton w-24 rounded-full"></div>
+          </div>
+        </div>
+
+        {/* Skeleton Content */}
+        <div className="p-6 space-y-6">
+          {/* Medical History Skeleton */}
+          <div>
+            <div className="h-4 skeleton w-32 mb-3"></div>
+            <div className="flex gap-2">
+              <div className="h-6 skeleton w-20 rounded-full"></div>
+              <div className="h-6 skeleton w-24 rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Medications Skeleton */}
+          <div>
+            <div className="h-4 skeleton w-36 mb-3"></div>
+            <div className="space-y-2">
+              <div className="h-4 skeleton w-40"></div>
+              <div className="h-4 skeleton w-48"></div>
+            </div>
+          </div>
+
+          {/* Allergies Skeleton */}
+          <div>
+            <div className="h-4 skeleton w-24 mb-3"></div>
+            <div className="h-6 skeleton w-20 rounded-full"></div>
+          </div>
+
+          {/* Vitals Skeleton */}
+          <div>
+            <div className="h-4 skeleton w-28 mb-3"></div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="bg-gray-50 rounded-lg p-3">
+                  <div className="h-3 skeleton w-16 mb-2"></div>
+                  <div className="h-6 skeleton w-12"></div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -66,17 +106,21 @@ export default function PatientCard() {
   }
 
   return (
-    <div className="card">
+    <div className="card fade-in" role="region" aria-labelledby="patient-name">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-medical-50 to-white">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">{patient.name}</h2>
+            <h2 id="patient-name" className="text-xl font-semibold text-gray-900">{patient.name}</h2>
             <p className="text-sm text-gray-500 mt-1">
-              {patient.age} years old • {patient.gender} • MRN: {patient.mrn}
+              <span aria-label="Age">{patient.age} years old</span>
+              <span aria-hidden="true"> • </span>
+              <span aria-label="Gender">{patient.gender}</span>
+              <span aria-hidden="true"> • </span>
+              <span aria-label="Medical Record Number">MRN: {patient.mrn}</span>
             </p>
           </div>
-          <span className="badge badge-blue">
+          <span className="badge badge-blue" role="status">
             Active Patient
           </span>
         </div>

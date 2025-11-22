@@ -73,14 +73,14 @@ export default function AIInsights({ analysisData }) {
   // Loading skeleton
   if (!analysisData) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" aria-busy="true" aria-label="Loading analysis results">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="card p-6 animate-pulse">
-            <div className="h-5 bg-gray-200 rounded w-1/4 mb-4"></div>
+          <div key={i} className="card p-6">
+            <div className="h-5 skeleton w-1/4 mb-4"></div>
             <div className="space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+              <div className="h-4 skeleton w-3/4"></div>
+              <div className="h-4 skeleton w-1/2"></div>
+              <div className="h-4 skeleton w-2/3"></div>
             </div>
           </div>
         ))}
@@ -91,17 +91,27 @@ export default function AIInsights({ analysisData }) {
   const { clinical_note, icd_codes, differential_diagnoses, recommended_actions } = analysisData;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="AI Analysis Results">
+      {/* Success indicator */}
+      <div className="flex items-center justify-center success-banner">
+        <div className="flex items-center px-4 py-2 bg-green-50 rounded-full border border-green-200">
+          <svg className="h-5 w-5 text-green-500 mr-2 checkmark-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-sm font-medium text-green-700">Analysis Complete</span>
+        </div>
+      </div>
+
       {/* Structured Clinical Note */}
       {clinical_note && (
-        <div className="card overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-medical-50 to-white border-b border-gray-200">
+        <div className="card overflow-hidden fade-in" role="region" aria-labelledby="clinical-note-title">
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <svg className="h-5 w-5 text-medical-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 text-medical-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <h3 className="text-lg font-semibold text-gray-900">Clinical Note</h3>
+                <h3 id="clinical-note-title" className="text-lg font-semibold text-gray-900">Clinical Note</h3>
               </div>
               <div className="flex space-x-2">
                 <button

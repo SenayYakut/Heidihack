@@ -307,6 +307,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Skip to main content link */}
+      <a
+        href="#main-content"
+        className="skip-link"
+      >
+        Skip to main content
+      </a>
+
       {/* Screen reader announcements (hidden visually) */}
       <div
         id="sr-announcements"
@@ -416,7 +424,7 @@ function App() {
       {/* =================================================================== */}
       {/* MAIN CONTENT - Side by Side Layout */}
       {/* =================================================================== */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+      <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Clinical Form */}
           <div className="space-y-4">
@@ -468,7 +476,9 @@ function App() {
 
             {/* Show insights or placeholder */}
             {analysisResults ? (
-              <AIInsights analysisData={analysisResults} />
+              <div className="slide-in-right">
+                <AIInsights analysisData={analysisResults} />
+              </div>
             ) : (
               <div className="card p-8 text-center bg-gray-50 border-2 border-dashed border-gray-300">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -500,12 +510,12 @@ function App() {
       {/* =================================================================== */}
       {isLoading.analysis && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="loading-title"
         >
-          <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-2xl">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4 shadow-2xl modal-content">
             <div className="text-center">
               {/* Animated icon */}
               <div className="relative mb-6">
@@ -524,14 +534,15 @@ function App() {
               </p>
 
               {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
+                  className="bg-blue-600 h-2 rounded-full progress-bar pulse-gradient"
                   style={{ width: `${getProgressPercentage()}%` }}
                   role="progressbar"
                   aria-valuenow={getProgressPercentage()}
                   aria-valuemin="0"
                   aria-valuemax="100"
+                  aria-label={getProgressMessage()}
                 ></div>
               </div>
 
@@ -561,12 +572,12 @@ function App() {
       {/* =================================================================== */}
       {showResetConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="reset-title"
         >
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl modal-content">
             <h4 id="reset-title" className="text-lg font-semibold text-gray-900 mb-2">
               Start New Encounter?
             </h4>

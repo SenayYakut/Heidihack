@@ -20,6 +20,7 @@ from models import (
     RecommendedActions,
 )
 from mock_data import MOCK_PATIENT
+from validate_mock_data import validate_mock_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,9 +43,116 @@ app.add_middleware(
 HEIDI_API_KEY = os.getenv("HEIDI_API_KEY")
 HEIDI_API_URL = os.getenv("HEIDI_API_URL", "https://api.heidi.health")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+DEVELOPMENT_MODE = os.getenv("DEVELOPMENT_MODE", "true").lower() == "true"
 
 # Initialize OpenAI client
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+
+# Global mock data storage
+MOCK_DATA = None
+MOCK_DATA_PATH = os.path.join(os.path.dirname(__file__), "patients-data.json")
+
+
+def load_mock_data() -> dict:
+    """Load mock data from patients-data.json file."""
+    global MOCK_DATA
+
+    if not os.path.exists(MOCK_DATA_PATH):
+        logger.error(f"Mock data file not found: {MOCK_DATA_PATH}")
+        return None
+
+    try:
+        with open(MOCK_DATA_PATH, 'r', encoding='utf-8') as f:
+            MOCK_DATA = json.load(f)
+        logger.info(f"Loaded mock data with {len(MOCK_DATA.get('scenarios', []))} scenarios")
+        return MOCK_DATA
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in mock data file: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to load mock data: {e}")
+        return None
+
+
+def get_mock_patient() -> dict:
+    """Get patient data from mock data file."""
+    if MOCK_DATA and "patient" in MOCK_DATA:
+        patient = MOCK_DATA["patient"]
+        # Transform to expected format for API
+        return {
+            "id": patient.get("id"),
+            "mrn": patient.get("mrn"),
+            "name": patient.get("name"),
+            "age": patient.get("age"),
+            "gender": patient.get("gender"),
+            "medical_history": patient.get("medical_history", []),
+            "medications": patient.get("current_medications", []),
+            "allergies": patient.get("allergies", []),
+            "vitals": patient.get("vitals", {})
+        }
+    return MOCK_PATIENT
+
+
+def select_mock_response(chief_complaint: str) -> dict:
+    """
+    Select appropriate mock API response based on chief complaint.
+
+    Logic:
+    - If chief complaint contains "abdominal" -> use "abdominal_pain" response
+    - If chief complaint contains "headache" or "fever" -> use "headache_fever" response
+    - Otherwise -> use "default" response
+    """
+    if not MOCK_DATA or "api_responses" not in MOCK_DATA:
+        logger.warning("No mock API responses available")
+        return None
+
+    responses = MOCK_DATA["api_responses"]
+    complaint_lower = chief_complaint.lower()
+
+    # Determine which response to use
+    if "abdominal" in complaint_lower:
+        response_key = "abdominal_pain"
+    elif "headache" in complaint_lower or "fever" in complaint_lower:
+        response_key = "headache_fever"
+    else:
+        response_key = "default"
+
+    # Get the response, fall back to default if specific one not found
+    if response_key in responses:
+        logger.info(f"Using mock response: {response_key}")
+        return responses[response_key]
+    elif "default" in responses:
+        logger.info("Falling back to default mock response")
+        return responses["default"]
+    else:
+        logger.error("No default mock response available")
+        return None
+
+
+def get_scenarios() -> list:
+    """Get list of available scenarios from mock data."""
+    if not MOCK_DATA or "scenarios" not in MOCK_DATA:
+        return []
+
+    scenarios = []
+    for scenario in MOCK_DATA["scenarios"]:
+        scenarios.append({
+            "id": scenario.get("id"),
+            "name": scenario.get("name"),
+            "description": scenario.get("description", "")
+        })
+    return scenarios
+
+
+def get_scenario_by_id(scenario_id: str) -> dict:
+    """Get a specific scenario's form_data by ID."""
+    if not MOCK_DATA or "scenarios" not in MOCK_DATA:
+        return None
+
+    for scenario in MOCK_DATA["scenarios"]:
+        if scenario.get("id") == scenario_id:
+            return scenario.get("form_data")
+    return None
 
 
 class HeidiAPIError(Exception):
@@ -662,7 +770,25 @@ def generate_mock_actions(chief_complaint: str) -> RecommendedActions:
 @app.get("/api/patient")
 async def get_patient():
     """Return the mock patient data."""
-    return MOCK_PATIENT
+    return get_mock_patient()
+
+
+@app.get("/api/scenarios")
+async def list_scenarios():
+    """Return list of available scenarios from mock data."""
+    scenarios = get_scenarios()
+    if not scenarios:
+        raise HTTPException(status_code=500, detail="No scenarios available")
+    return {"scenarios": scenarios}
+
+
+@app.get("/api/scenarios/{scenario_id}")
+async def get_scenario(scenario_id: str):
+    """Return form_data for a specific scenario."""
+    form_data = get_scenario_by_id(scenario_id)
+    if form_data is None:
+        raise HTTPException(status_code=404, detail=f"Scenario '{scenario_id}' not found")
+    return {"form_data": form_data}
 
 
 @app.post("/api/transcribe")
@@ -715,7 +841,78 @@ async def analyze_encounter(request: AnalysisRequest):
 
     # If patient context not provided, use mock patient
     if not patient_dict.get('name'):
-        patient_dict = MOCK_PATIENT
+        patient_dict = get_mock_patient()
+
+    # In DEVELOPMENT_MODE, use pre-defined mock API responses
+    if DEVELOPMENT_MODE and MOCK_DATA:
+        logger.info("DEVELOPMENT_MODE: Using mock API response")
+        mock_response = select_mock_response(form_data.chief_complaint)
+
+        if mock_response:
+            # Parse clinical note from mock response
+            clinical_note = ClinicalNote(
+                subjective=mock_response.get("clinical_note", ""),
+                objective="",
+                assessment="",
+                plan=""
+            )
+
+            # Parse ICD-10 codes
+            icd_codes = []
+            for code_data in mock_response.get("icd10_codes", []):
+                icd_codes.append(ICD10Code(
+                    code=code_data.get("code", ""),
+                    description=code_data.get("description", "")
+                ))
+
+            # Parse differential diagnoses
+            differential_diagnoses = []
+            for dx in mock_response.get("differential_diagnoses", []):
+                differential_diagnoses.append(DifferentialDiagnosis(
+                    name=dx.get("diagnosis", "Unknown"),
+                    risk=dx.get("risk_level", "MEDIUM"),
+                    supporting_factors=dx.get("supporting_evidence", []),
+                    recommended_actions=dx.get("recommended_actions", [])
+                ))
+
+            # Parse tasks
+            tasks = mock_response.get("tasks", {})
+            immediate_tasks = []
+            for task in tasks.get("immediate_tasks", []):
+                immediate_tasks.append(RecommendedAction(
+                    name=task.get("task", ""),
+                    category=task.get("category", ""),
+                    details=task.get("reason", "")
+                ))
+
+            urgent_tasks = []
+            for task in tasks.get("urgent_tasks", []):
+                urgent_tasks.append(RecommendedAction(
+                    name=task.get("task", ""),
+                    category=task.get("category", ""),
+                    details=task.get("reason", "")
+                ))
+
+            routine_tasks = []
+            for task in tasks.get("routine_tasks", []):
+                routine_tasks.append(RecommendedAction(
+                    name=task.get("task", ""),
+                    category=task.get("category", ""),
+                    details=task.get("reason", "")
+                ))
+
+            recommended_actions = RecommendedActions(
+                immediate=immediate_tasks,
+                urgent=urgent_tasks,
+                routine=routine_tasks
+            )
+
+            return AnalysisResponse(
+                clinical_note=clinical_note,
+                icd_codes=icd_codes,
+                differential_diagnoses=differential_diagnoses,
+                recommended_actions=recommended_actions
+            )
 
     try:
         # Step 1: Generate clinical note with Heidi
@@ -852,8 +1049,61 @@ async def health_check():
     return {
         "status": "healthy",
         "heidi_configured": bool(HEIDI_API_KEY),
-        "openai_configured": bool(OPENAI_API_KEY)
+        "openai_configured": bool(OPENAI_API_KEY),
+        "development_mode": DEVELOPMENT_MODE,
+        "mock_data_loaded": MOCK_DATA is not None
     }
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize application on startup.
+
+    - Load mock data from patients-data.json
+    - Validate mock data structure
+    - Exit if validation fails in DEVELOPMENT_MODE
+    """
+    logger.info("=" * 60)
+    logger.info("Starting Clinical AI Assistant")
+    logger.info("=" * 60)
+    logger.info(f"Development Mode: {DEVELOPMENT_MODE}")
+    logger.info(f"Heidi API configured: {bool(HEIDI_API_KEY)}")
+    logger.info(f"OpenAI API configured: {bool(OPENAI_API_KEY)}")
+
+    # Load mock data
+    logger.info("Loading mock data...")
+    data = load_mock_data()
+
+    if data is None:
+        if DEVELOPMENT_MODE:
+            logger.error("FATAL: Mock data failed to load in DEVELOPMENT_MODE")
+            logger.error("Please ensure patients-data.json exists and is valid JSON")
+            import sys
+            sys.exit(1)
+        else:
+            logger.warning("Mock data not loaded - will use API calls")
+    else:
+        # Validate mock data structure
+        logger.info("Validating mock data structure...")
+        is_valid = validate_mock_data(MOCK_DATA_PATH)
+
+        if not is_valid:
+            if DEVELOPMENT_MODE:
+                logger.error("FATAL: Mock data validation failed in DEVELOPMENT_MODE")
+                logger.error("Please fix the issues in patients-data.json")
+                import sys
+                sys.exit(1)
+            else:
+                logger.warning("Mock data validation failed - will use API calls")
+        else:
+            logger.info("Mock data validation passed")
+            logger.info(f"Loaded {len(MOCK_DATA.get('scenarios', []))} scenarios")
+            logger.info(f"Loaded {len(MOCK_DATA.get('api_responses', {}))} API responses")
+
+    logger.info("=" * 60)
+    logger.info("Startup complete")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

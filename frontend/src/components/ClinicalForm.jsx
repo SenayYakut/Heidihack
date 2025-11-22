@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 const STORAGE_KEY = 'clinical_form_draft';
+const DRAFT_CHECK_KEY = 'clinical_form_draft_timestamp';
 
 const initialFormState = {
   chief_complaint: '',
@@ -39,20 +40,71 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
   const [showPhysicalExam, setShowPhysicalExam] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [showDraftRecovery, setShowDraftRecovery] = useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
 
-  // Load from localStorage on mount
+  // Refs for focus management
+  const chiefComplaintRef = useRef(null);
+  const firstErrorRef = useRef(null);
+  const cancelButtonRef = useRef(null);
+
+  // Load from localStorage on mount and check for drafts
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
+    const timestamp = localStorage.getItem(DRAFT_CHECK_KEY);
+
+    if (saved && timestamp) {
       try {
         const parsed = JSON.parse(saved);
-        setFormData(parsed);
-        setLastSaved(new Date());
+        const savedTime = new Date(parseInt(timestamp));
+
+        // Show recovery dialog if draft exists
+        if (parsed.chief_complaint || parsed.doctor_notes || parsed.hpi.location.length > 0) {
+          setDraftTimestamp(savedTime);
+          setShowDraftRecovery(true);
+        }
       } catch (e) {
         console.error('Failed to parse saved form data:', e);
       }
     }
   }, []);
+
+  // Keyboard shortcut for form submission (Cmd/Ctrl + Enter)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        const form = document.getElementById('clinical-form');
+        if (form) {
+          form.requestSubmit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Handle draft recovery
+  const handleRecoverDraft = () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setFormData(parsed);
+        setLastSaved(draftTimestamp);
+      } catch (e) {
+        console.error('Failed to parse saved form data:', e);
+      }
+    }
+    setShowDraftRecovery(false);
+  };
+
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(DRAFT_CHECK_KEY);
+    setShowDraftRecovery(false);
+  };
 
   // Prefill vitals from patient context
   useEffect(() => {
@@ -76,11 +128,25 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
   // Auto-save to localStorage every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
+      const now = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-      setLastSaved(new Date());
+      localStorage.setItem(DRAFT_CHECK_KEY, now.toString());
+      setLastSaved(new Date(now));
     }, 30000);
 
     return () => clearInterval(interval);
+  }, [formData]);
+
+  // Save immediately when form data changes (debounced by the interval)
+  useEffect(() => {
+    // Save to localStorage on any change with timestamp
+    const timeoutId = setTimeout(() => {
+      const now = Date.now();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+      localStorage.setItem(DRAFT_CHECK_KEY, now.toString());
+    }, 2000); // Debounce 2 seconds
+
+    return () => clearTimeout(timeoutId);
   }, [formData]);
 
   const validate = useCallback(() => {
@@ -97,6 +163,10 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
     setTouched({ chief_complaint: true });
 
     if (!validate()) {
+      // Focus on first error field
+      if (chiefComplaintRef.current) {
+        chiefComplaintRef.current.focus();
+      }
       return;
     }
 
@@ -104,6 +174,7 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
     try {
       await onSubmit?.(formData);
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(DRAFT_CHECK_KEY);
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
@@ -116,7 +187,16 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
     setErrors({});
     setTouched({});
     setShowClearConfirm(false);
+    setLastSaved(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(DRAFT_CHECK_KEY);
+
+    // Focus on chief complaint field after clearing
+    setTimeout(() => {
+      if (chiefComplaintRef.current) {
+        chiefComplaintRef.current.focus();
+      }
+    }, 100);
   };
 
   const updateField = (field, value) => {
@@ -175,37 +255,88 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Chief Complaint */}
-      <div className="card p-6">
-        <div className="flex items-center mb-4">
-          <svg className="h-5 w-5 text-medical-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-          </svg>
-          <h3 className="text-lg font-semibold text-gray-900">Chief Complaint</h3>
-          <span className="ml-2 text-red-500">*</span>
-          {formData.chief_complaint.trim() && (
-            <svg className="h-5 w-5 text-green-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <>
+      {/* Draft Recovery Dialog */}
+      {showDraftRecovery && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="draft-recovery-title"
+        >
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 shadow-xl modal-content">
+            <h4 id="draft-recovery-title" className="text-lg font-semibold text-gray-900 mb-2">
+              Recover Draft?
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              You have an unsaved draft from {draftTimestamp?.toLocaleString()}. Would you like to recover it?
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={handleRecoverDraft}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                autoFocus
+              >
+                Recover
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form
+        id="clinical-form"
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        aria-label="Clinical documentation form"
+        noValidate
+      >
+        {/* Chief Complaint */}
+        <div className="card p-6 fade-in">
+          <div className="flex items-center mb-4">
+            <svg className="h-5 w-5 text-medical-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
             </svg>
+            <h3 id="chief-complaint-label" className="text-lg font-semibold text-gray-900">Chief Complaint</h3>
+            <span className="ml-2 text-red-500" aria-hidden="true">*</span>
+            {formData.chief_complaint.trim() && (
+              <svg className="h-5 w-5 text-green-500 ml-auto checkmark-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+          <input
+            ref={chiefComplaintRef}
+            type="text"
+            id="chief-complaint"
+            value={formData.chief_complaint}
+            onChange={(e) => updateField('chief_complaint', e.target.value)}
+            onBlur={() => setTouched(prev => ({ ...prev, chief_complaint: true }))}
+            placeholder="e.g., Chest pain, Shortness of breath, Headache"
+            aria-labelledby="chief-complaint-label"
+            aria-required="true"
+            aria-invalid={touched.chief_complaint && !!errors.chief_complaint}
+            aria-describedby={touched.chief_complaint && errors.chief_complaint ? "chief-complaint-error" : undefined}
+            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 ${
+              touched.chief_complaint && errors.chief_complaint
+                ? 'border-red-500 bg-red-50'
+                : 'border-gray-300'
+            }`}
+          />
+          {touched.chief_complaint && errors.chief_complaint && (
+            <p id="chief-complaint-error" className="mt-1 text-sm text-red-600" role="alert">
+              {errors.chief_complaint}
+            </p>
           )}
         </div>
-        <input
-          type="text"
-          value={formData.chief_complaint}
-          onChange={(e) => updateField('chief_complaint', e.target.value)}
-          onBlur={() => setTouched(prev => ({ ...prev, chief_complaint: true }))}
-          placeholder="e.g., Chest pain, Shortness of breath, Headache"
-          className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 ${
-            touched.chief_complaint && errors.chief_complaint
-              ? 'border-red-500 bg-red-50'
-              : 'border-gray-300'
-          }`}
-        />
-        {touched.chief_complaint && errors.chief_complaint && (
-          <p className="mt-1 text-sm text-red-600">{errors.chief_complaint}</p>
-        )}
-      </div>
 
       {/* History of Present Illness */}
       <div className="card p-6">
@@ -588,6 +719,7 @@ export default function ClinicalForm({ patientContext, onSubmit }) {
           </div>
         </div>
       )}
-    </form>
+      </form>
+    </>
   );
 }

@@ -1,0 +1,718 @@
+{
+  "patient": {
+    "id": 49302,
+    "mrn": "PT-49302",
+    "name": "Maria Alvarez",
+    "age": 42,
+    "gender": "Female",
+    "date_of_birth": "1983-07-12",
+    "medical_history": [
+      "Mild anemia",
+      "Seasonal allergies"
+    ],
+    "current_medications": [
+      "Multivitamin daily",
+      "Iron supplement 65mg daily"
+    ],
+    "allergies": [
+      "Penicillin"
+    ],
+    "vitals": {
+      "blood_pressure": "118/76",
+      "heart_rate": 78,
+      "temperature": 98.1,
+      "oxygen_saturation": 98,
+      "respiratory_rate": 16
+    }
+  },
+  "scenarios": [
+    {
+      "id": "chest_pain",
+      "name": "Chest Pain - Cardiac Concern",
+      "description": "Patient presents with substernal chest pain radiating to left arm, concerning for acute coronary syndrome",
+      "form_data": {
+        "chief_complaint": "Chest pain",
+        "hpi": {
+          "location": ["Substernal", "Left chest"],
+          "radiation": ["Left arm", "Jaw"],
+          "quality": ["Pressure", "Squeezing"],
+          "quality_other": "",
+          "duration": "2-4 hours",
+          "severity": 7,
+          "timing": "Constant",
+          "aggravating_factors": ["Exertion", "Stress"],
+          "relieving_factors": ["Rest", "Nitroglycerin"]
+        },
+        "associated_symptoms": [
+          "Shortness of breath",
+          "Diaphoresis",
+          "Nausea/vomiting",
+          "Palpitations"
+        ],
+        "physical_exam": {
+          "general": ["Anxious", "Diaphoretic", "Mild distress"],
+          "vitals": {
+            "bp": "142/88",
+            "hr": 92,
+            "temp": 98.4,
+            "spo2": 96,
+            "rr": 20
+          },
+          "cardiovascular": ["Regular rhythm", "No murmurs", "S1 S2 normal"],
+          "respiratory": ["Clear to auscultation bilaterally", "No wheezes"]
+        },
+        "doctor_notes": "High concern for ACS given risk factors and presentation. ECG shows ST depression in leads V4-V6. Recommend immediate cardiology consult."
+      }
+    },
+    {
+      "id": "abdominal_pain",
+      "name": "Abdominal Pain - Possible Appendicitis",
+      "description": "Patient presents with right lower quadrant pain with migration from periumbilical area, concerning for appendicitis",
+      "form_data": {
+        "chief_complaint": "Abdominal pain",
+        "hpi": {
+          "location": ["Right lower quadrant", "Periumbilical"],
+          "radiation": ["Back"],
+          "quality": ["Sharp", "Cramping"],
+          "quality_other": "Initially dull, now sharp",
+          "duration": "12-24 hours",
+          "severity": 8,
+          "timing": "Constant",
+          "aggravating_factors": ["Movement", "Coughing", "Deep breathing"],
+          "relieving_factors": ["Lying still", "Fetal position"]
+        },
+        "associated_symptoms": [
+          "Nausea/vomiting",
+          "Fever",
+          "Loss of appetite",
+          "Constipation"
+        ],
+        "physical_exam": {
+          "general": ["Appears uncomfortable", "Guarding abdomen", "Lying still"],
+          "vitals": {
+            "bp": "128/82",
+            "hr": 98,
+            "temp": 100.8,
+            "spo2": 98,
+            "rr": 18
+          },
+          "cardiovascular": ["Regular rhythm", "Tachycardic", "No murmurs"],
+          "respiratory": ["Clear bilaterally", "Shallow breathing due to pain"]
+        },
+        "doctor_notes": "Classic presentation for acute appendicitis. Positive McBurney's point tenderness, rebound tenderness, and Rovsing's sign. Recommend surgical consult and CT abdomen."
+      }
+    },
+    {
+      "id": "headache_fever",
+      "name": "Headache with Fever - Possible Meningitis",
+      "description": "Patient presents with severe headache, high fever, and neck stiffness, concerning for meningitis",
+      "form_data": {
+        "chief_complaint": "Severe headache with fever",
+        "hpi": {
+          "location": ["Frontal", "Occipital", "Diffuse"],
+          "radiation": ["Neck", "Down spine"],
+          "quality": ["Throbbing", "Severe"],
+          "quality_other": "Worst headache of life",
+          "duration": "6-12 hours",
+          "severity": 9,
+          "timing": "Constant",
+          "aggravating_factors": ["Light", "Loud noises", "Neck movement"],
+          "relieving_factors": ["Dark room", "Quiet environment"]
+        },
+        "associated_symptoms": [
+          "Fever",
+          "Neck stiffness",
+          "Photophobia",
+          "Nausea/vomiting",
+          "Confusion"
+        ],
+        "physical_exam": {
+          "general": ["Toxic appearance", "Photophobic", "Altered mental status"],
+          "vitals": {
+            "bp": "138/86",
+            "hr": 108,
+            "temp": 102.4,
+            "spo2": 97,
+            "rr": 22
+          },
+          "cardiovascular": ["Tachycardic", "Regular rhythm", "No murmurs"],
+          "respiratory": ["Clear to auscultation", "Tachypneic"]
+        },
+        "doctor_notes": "High suspicion for bacterial meningitis. Positive Kernig's and Brudzinski's signs. Nuchal rigidity present. Immediate LP needed after CT head. Start empiric antibiotics immediately."
+      }
+    }
+  ],
+  "api_responses": {
+    "default": {
+      "clinical_note": "SUBJECTIVE:\nChief Complaint: Chest pain\n\nHistory of Present Illness: 42-year-old female presents with substernal chest pain radiating to left arm and jaw. The pain is described as pressure-like and squeezing, with severe intensity (7/10). Duration: 2-4 hours. The symptoms are constant.\n\nAggravating factors include: exertion, stress.\nRelieving factors include: rest, nitroglycerin.\n\nAssociated Symptoms: shortness of breath, diaphoresis, nausea/vomiting, palpitations\n\nPast Medical History: Mild anemia, Seasonal allergies\nCurrent Medications: Multivitamin daily, Iron supplement 65mg daily\nAllergies: Penicillin\n\nOBJECTIVE:\nVital Signs:\n- Blood Pressure: 142/88 mmHg\n- Heart Rate: 92 bpm\n- Temperature: 98.4F\n- SpO2: 96%\n- Respiratory Rate: 20/min\n\nGeneral: Anxious, Diaphoretic, Mild distress\nCardiovascular: Regular rhythm, No murmurs, S1 S2 normal\nRespiratory: Clear to auscultation bilaterally, No wheezes\n\nASSESSMENT:\nChest pain - High concern for Acute Coronary Syndrome\n\nClinical Impression: Patient presents with severe chest pain with onset 2-4 hours ago. ECG shows ST depression in leads V4-V6. Multiple cardiac risk factors present.\n\nPLAN:\n1. STAT 12-lead ECG - completed, showing ST depression\n2. Serial troponins q3h\n3. Continuous cardiac monitoring\n4. Aspirin 325mg PO (if not allergic)\n5. Nitroglycerin SL PRN chest pain\n6. Cardiology consult STAT\n7. Consider heparin drip pending cardiology recommendations\n8. NPO for possible cardiac catheterization",
+      "icd10_codes": [
+        {
+          "code": "I20.9",
+          "description": "Angina pectoris, unspecified",
+          "type": "primary"
+        },
+        {
+          "code": "R07.9",
+          "description": "Chest pain, unspecified",
+          "type": "secondary"
+        },
+        {
+          "code": "R06.00",
+          "description": "Dyspnea, unspecified",
+          "type": "secondary"
+        },
+        {
+          "code": "R00.2",
+          "description": "Palpitations",
+          "type": "secondary"
+        }
+      ],
+      "differential_diagnoses": [
+        {
+          "rank": 1,
+          "diagnosis": "Acute Coronary Syndrome (NSTEMI/Unstable Angina)",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Substernal chest pain with radiation to arm and jaw",
+            "Pressure/squeezing quality typical of cardiac pain",
+            "Associated diaphoresis and dyspnea",
+            "ST depression on ECG",
+            "Pain relieved by nitroglycerin"
+          ],
+          "opposing_evidence": [
+            "Relatively young age (42)",
+            "Female gender (atypical presentation possible)"
+          ],
+          "recommended_actions": [
+            "Serial troponins q3h x 3",
+            "Continuous telemetry monitoring",
+            "Cardiology consult STAT",
+            "Consider anticoagulation"
+          ]
+        },
+        {
+          "rank": 2,
+          "diagnosis": "Pulmonary Embolism",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Acute onset chest pain",
+            "Dyspnea and tachypnea",
+            "Tachycardia"
+          ],
+          "opposing_evidence": [
+            "Pain radiates to arm/jaw (more typical of cardiac)",
+            "Pain relieved by nitroglycerin",
+            "No pleuritic component described"
+          ],
+          "recommended_actions": [
+            "D-dimer if low/moderate pretest probability",
+            "CT angiography if high suspicion",
+            "Assess Wells criteria"
+          ]
+        },
+        {
+          "rank": 3,
+          "diagnosis": "Gastroesophageal Reflux Disease",
+          "risk_level": "LOW",
+          "supporting_evidence": [
+            "Substernal location",
+            "Can present with pressure sensation"
+          ],
+          "opposing_evidence": [
+            "Radiation to arm and jaw atypical for GERD",
+            "Associated diaphoresis unlikely in GERD",
+            "ST changes on ECG"
+          ],
+          "recommended_actions": [
+            "Consider after cardiac causes ruled out",
+            "Trial of PPI if appropriate"
+          ]
+        },
+        {
+          "rank": 4,
+          "diagnosis": "Musculoskeletal Chest Pain",
+          "risk_level": "LOW",
+          "supporting_evidence": [
+            "Common cause of chest pain"
+          ],
+          "opposing_evidence": [
+            "Not reproducible with palpation",
+            "Associated autonomic symptoms",
+            "ECG changes present"
+          ],
+          "recommended_actions": [
+            "Physical examination for reproducibility",
+            "Consider after cardiac workup negative"
+          ]
+        }
+      ],
+      "tasks": {
+        "immediate_tasks": [
+          {
+            "task": "12-lead ECG STAT",
+            "category": "Diagnostic",
+            "reason": "Evaluate for STEMI or acute ischemic changes requiring emergent intervention"
+          },
+          {
+            "task": "Troponin I STAT",
+            "category": "Lab",
+            "reason": "Detect myocardial injury - first of serial measurements"
+          },
+          {
+            "task": "Continuous cardiac monitoring",
+            "category": "Monitoring",
+            "reason": "Detect arrhythmias associated with ACS"
+          },
+          {
+            "task": "IV access and saline lock",
+            "category": "Procedure",
+            "reason": "Ensure access for emergency medications"
+          },
+          {
+            "task": "Aspirin 325mg PO",
+            "category": "Medication",
+            "reason": "Antiplatelet therapy for suspected ACS - NO PENICILLIN ALLERGY CONFLICT"
+          }
+        ],
+        "urgent_tasks": [
+          {
+            "task": "Cardiology consult",
+            "category": "Referral",
+            "reason": "Specialist evaluation for possible cardiac catheterization"
+          },
+          {
+            "task": "Chest X-ray portable",
+            "category": "Imaging",
+            "reason": "Evaluate for cardiomegaly, pulmonary edema, other thoracic pathology"
+          },
+          {
+            "task": "Basic Metabolic Panel",
+            "category": "Lab",
+            "reason": "Assess electrolytes and renal function before potential contrast"
+          },
+          {
+            "task": "CBC with differential",
+            "category": "Lab",
+            "reason": "Baseline hemoglobin, evaluate for infection"
+          },
+          {
+            "task": "PT/INR, PTT",
+            "category": "Lab",
+            "reason": "Coagulation studies before anticoagulation therapy"
+          },
+          {
+            "task": "Repeat troponin in 3 hours",
+            "category": "Lab",
+            "reason": "Serial troponins to detect rising trend"
+          }
+        ],
+        "routine_tasks": [
+          {
+            "task": "Lipid panel",
+            "category": "Lab",
+            "reason": "Cardiovascular risk stratification"
+          },
+          {
+            "task": "HbA1c",
+            "category": "Lab",
+            "reason": "Screen for diabetes as cardiac risk factor"
+          },
+          {
+            "task": "Echocardiogram",
+            "category": "Imaging",
+            "reason": "Assess wall motion abnormalities and ejection fraction"
+          },
+          {
+            "task": "Smoking cessation counseling",
+            "category": "Education",
+            "reason": "Risk factor modification if applicable"
+          },
+          {
+            "task": "Cardiac rehabilitation referral",
+            "category": "Referral",
+            "reason": "Post-event rehabilitation if ACS confirmed"
+          }
+        ]
+      }
+    },
+    "abdominal_pain": {
+      "clinical_note": "SUBJECTIVE:\nChief Complaint: Abdominal pain\n\nHistory of Present Illness: 42-year-old female presents with right lower quadrant abdominal pain that migrated from the periumbilical area. The pain is described as sharp and cramping, initially dull but now sharp, with severe intensity (8/10). Duration: 12-24 hours. The symptoms are constant.\n\nAggravating factors include: movement, coughing, deep breathing.\nRelieving factors include: lying still, fetal position.\n\nAssociated Symptoms: nausea/vomiting, fever, loss of appetite, constipation\n\nPast Medical History: Mild anemia, Seasonal allergies\nCurrent Medications: Multivitamin daily, Iron supplement 65mg daily\nAllergies: Penicillin\n\nOBJECTIVE:\nVital Signs:\n- Blood Pressure: 128/82 mmHg\n- Heart Rate: 98 bpm\n- Temperature: 100.8F\n- SpO2: 98%\n- Respiratory Rate: 18/min\n\nGeneral: Appears uncomfortable, Guarding abdomen, Lying still\nCardiovascular: Regular rhythm, Tachycardic, No murmurs\nRespiratory: Clear bilaterally, Shallow breathing due to pain\n\nAbdominal Exam: McBurney's point tenderness positive, Rebound tenderness positive, Rovsing's sign positive, Guarding present, Decreased bowel sounds\n\nASSESSMENT:\nAcute Abdominal Pain - High suspicion for Acute Appendicitis\n\nClinical Impression: Classic presentation with pain migration from periumbilical to RLQ, fever, anorexia, and positive peritoneal signs. Alvarado score: 8/10.\n\nPLAN:\n1. NPO\n2. IV fluids - NS bolus then maintenance\n3. Pain management with IV morphine (avoid masking peritoneal signs until surgical evaluation)\n4. CT abdomen/pelvis with contrast\n5. Surgical consult STAT\n6. CBC, BMP, lipase, urinalysis\n7. Blood cultures if sepsis concern\n8. Avoid NSAIDs given surgical possibility",
+      "icd10_codes": [
+        {
+          "code": "K35.80",
+          "description": "Unspecified acute appendicitis",
+          "type": "primary"
+        },
+        {
+          "code": "R10.31",
+          "description": "Right lower quadrant pain",
+          "type": "secondary"
+        },
+        {
+          "code": "R50.9",
+          "description": "Fever, unspecified",
+          "type": "secondary"
+        },
+        {
+          "code": "R11.2",
+          "description": "Nausea with vomiting, unspecified",
+          "type": "secondary"
+        }
+      ],
+      "differential_diagnoses": [
+        {
+          "rank": 1,
+          "diagnosis": "Acute Appendicitis",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Classic pain migration from periumbilical to RLQ",
+            "Positive McBurney's point tenderness",
+            "Positive rebound and Rovsing's signs",
+            "Fever and anorexia",
+            "Nausea and vomiting"
+          ],
+          "opposing_evidence": [
+            "No definitive imaging yet"
+          ],
+          "recommended_actions": [
+            "CT abdomen/pelvis with contrast STAT",
+            "Surgical consult STAT",
+            "NPO status",
+            "IV antibiotics if confirmed - avoid Penicillin (ALLERGY)"
+          ]
+        },
+        {
+          "rank": 2,
+          "diagnosis": "Ovarian Pathology (Torsion/Cyst Rupture)",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Female patient of reproductive age",
+            "RLQ pain",
+            "Acute onset"
+          ],
+          "opposing_evidence": [
+            "Pain migration pattern typical of appendicitis",
+            "Fever present (less common in ovarian torsion)",
+            "Positive peritoneal signs"
+          ],
+          "recommended_actions": [
+            "Pelvic ultrasound",
+            "Beta-hCG to rule out ectopic",
+            "GYN consult if indicated"
+          ]
+        },
+        {
+          "rank": 3,
+          "diagnosis": "Mesenteric Lymphadenitis",
+          "risk_level": "MEDIUM",
+          "supporting_evidence": [
+            "RLQ pain",
+            "Can mimic appendicitis"
+          ],
+          "opposing_evidence": [
+            "Usually in younger patients",
+            "Often follows viral illness",
+            "Peritoneal signs less prominent"
+          ],
+          "recommended_actions": [
+            "CT will help differentiate",
+            "Usually self-limiting"
+          ]
+        },
+        {
+          "rank": 4,
+          "diagnosis": "Ureterolithiasis",
+          "risk_level": "LOW",
+          "supporting_evidence": [
+            "Can cause RLQ pain"
+          ],
+          "opposing_evidence": [
+            "Usually colicky, not constant",
+            "Fever uncommon unless infected",
+            "No peritoneal signs typically"
+          ],
+          "recommended_actions": [
+            "Urinalysis for hematuria",
+            "CT will evaluate"
+          ]
+        }
+      ],
+      "tasks": {
+        "immediate_tasks": [
+          {
+            "task": "NPO status",
+            "category": "Order",
+            "reason": "Prepare for possible emergency surgery"
+          },
+          {
+            "task": "IV access - 2 large bore IVs",
+            "category": "Procedure",
+            "reason": "Fluid resuscitation and medication administration"
+          },
+          {
+            "task": "IV Normal Saline 1L bolus",
+            "category": "Medication",
+            "reason": "Volume resuscitation for possible sepsis"
+          },
+          {
+            "task": "Surgical consult STAT",
+            "category": "Referral",
+            "reason": "High suspicion for surgical abdomen"
+          }
+        ],
+        "urgent_tasks": [
+          {
+            "task": "CT Abdomen/Pelvis with IV contrast",
+            "category": "Imaging",
+            "reason": "Confirm appendicitis, evaluate for perforation or abscess"
+          },
+          {
+            "task": "CBC with differential STAT",
+            "category": "Lab",
+            "reason": "Evaluate leukocytosis with left shift"
+          },
+          {
+            "task": "BMP STAT",
+            "category": "Lab",
+            "reason": "Assess renal function before contrast, electrolytes"
+          },
+          {
+            "task": "Urinalysis",
+            "category": "Lab",
+            "reason": "Rule out UTI, evaluate for hematuria"
+          },
+          {
+            "task": "Lipase",
+            "category": "Lab",
+            "reason": "Rule out pancreatitis"
+          },
+          {
+            "task": "Beta-hCG",
+            "category": "Lab",
+            "reason": "Rule out ectopic pregnancy in female of reproductive age"
+          },
+          {
+            "task": "Type and Screen",
+            "category": "Lab",
+            "reason": "Prepare for possible surgery"
+          }
+        ],
+        "routine_tasks": [
+          {
+            "task": "Pain reassessment q1h",
+            "category": "Monitoring",
+            "reason": "Monitor for worsening peritonitis"
+          },
+          {
+            "task": "Post-operative follow-up scheduling",
+            "category": "Follow-up",
+            "reason": "Wound check and pathology review if surgery performed"
+          },
+          {
+            "task": "Diet advancement education",
+            "category": "Education",
+            "reason": "Post-operative diet progression instructions"
+          }
+        ]
+      }
+    },
+    "headache_fever": {
+      "clinical_note": "SUBJECTIVE:\nChief Complaint: Severe headache with fever\n\nHistory of Present Illness: 42-year-old female presents with severe headache described as the worst headache of her life, diffuse location with frontal and occipital components. The pain is described as throbbing and severe, with intensity 9/10. Duration: 6-12 hours. The symptoms are constant.\n\nAggravating factors include: light, loud noises, neck movement.\nRelieving factors include: dark room, quiet environment.\n\nAssociated Symptoms: fever, neck stiffness, photophobia, nausea/vomiting, confusion\n\nPast Medical History: Mild anemia, Seasonal allergies\nCurrent Medications: Multivitamin daily, Iron supplement 65mg daily\nAllergies: Penicillin\n\nOBJECTIVE:\nVital Signs:\n- Blood Pressure: 138/86 mmHg\n- Heart Rate: 108 bpm\n- Temperature: 102.4F\n- SpO2: 97%\n- Respiratory Rate: 22/min\n\nGeneral: Toxic appearance, Photophobic, Altered mental status\nCardiovascular: Tachycardic, Regular rhythm, No murmurs\nRespiratory: Clear to auscultation, Tachypneic\n\nNeurological: Positive Kernig's sign, Positive Brudzinski's sign, Nuchal rigidity present, GCS 14 (confused)\n\nASSESSMENT:\nSevere headache with fever - HIGH suspicion for Bacterial Meningitis\n\nClinical Impression: Patient presents with classic meningitis triad: headache, fever, and nuchal rigidity. Altered mental status and positive meningeal signs. This is a medical emergency requiring immediate intervention.\n\nPLAN:\n1. IMMEDIATE empiric antibiotics - Ceftriaxone 2g IV + Vancomycin 1g IV (avoid Penicillin - ALLERGY)\n2. Dexamethasone 0.15mg/kg IV before or with first antibiotic dose\n3. CT head without contrast STAT to rule out mass/elevated ICP\n4. Lumbar puncture immediately after CT if no contraindications\n5. Blood cultures x 2 before antibiotics if possible (do not delay antibiotics)\n6. Droplet precautions until etiology determined\n7. ICU admission\n8. Neurology and Infectious Disease consults",
+      "icd10_codes": [
+        {
+          "code": "G03.9",
+          "description": "Meningitis, unspecified",
+          "type": "primary"
+        },
+        {
+          "code": "R51.9",
+          "description": "Headache, unspecified",
+          "type": "secondary"
+        },
+        {
+          "code": "R50.9",
+          "description": "Fever, unspecified",
+          "type": "secondary"
+        },
+        {
+          "code": "R29.1",
+          "description": "Meningismus",
+          "type": "secondary"
+        }
+      ],
+      "differential_diagnoses": [
+        {
+          "rank": 1,
+          "diagnosis": "Bacterial Meningitis",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Classic triad: headache, fever, nuchal rigidity",
+            "Positive Kernig's and Brudzinski's signs",
+            "Altered mental status",
+            "Toxic appearance",
+            "Photophobia"
+          ],
+          "opposing_evidence": [
+            "No rash noted (would suggest meningococcemia)",
+            "Awaiting LP results for confirmation"
+          ],
+          "recommended_actions": [
+            "Empiric antibiotics IMMEDIATELY - Ceftriaxone + Vancomycin (NO Penicillin - ALLERGY)",
+            "Dexamethasone before/with antibiotics",
+            "CT head then LP",
+            "ICU admission"
+          ]
+        },
+        {
+          "rank": 2,
+          "diagnosis": "Viral Meningitis",
+          "risk_level": "MEDIUM",
+          "supporting_evidence": [
+            "Meningeal signs present",
+            "Headache and fever"
+          ],
+          "opposing_evidence": [
+            "Toxic appearance suggests bacterial",
+            "Altered mental status more common in bacterial",
+            "High fever (102.4F)"
+          ],
+          "recommended_actions": [
+            "LP will differentiate (lymphocytic vs neutrophilic pleocytosis)",
+            "Treat as bacterial until proven otherwise"
+          ]
+        },
+        {
+          "rank": 3,
+          "diagnosis": "Subarachnoid Hemorrhage",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Worst headache of life - thunderclap description",
+            "Meningeal signs can be present"
+          ],
+          "opposing_evidence": [
+            "High fever present (unusual in SAH)",
+            "Gradual onset over hours (SAH typically sudden)"
+          ],
+          "recommended_actions": [
+            "CT head will evaluate",
+            "LP for xanthochromia if CT negative but suspicion remains"
+          ]
+        },
+        {
+          "rank": 4,
+          "diagnosis": "Encephalitis",
+          "risk_level": "HIGH",
+          "supporting_evidence": [
+            "Altered mental status",
+            "Fever and headache"
+          ],
+          "opposing_evidence": [
+            "Prominent meningeal signs suggest meningitis over pure encephalitis"
+          ],
+          "recommended_actions": [
+            "Consider HSV encephalitis - add Acyclovir if suspected",
+            "MRI brain if encephalitis suspected"
+          ]
+        }
+      ],
+      "tasks": {
+        "immediate_tasks": [
+          {
+            "task": "Ceftriaxone 2g IV STAT",
+            "category": "Medication",
+            "reason": "Empiric coverage for bacterial meningitis - safe with Penicillin allergy (cephalosporin)"
+          },
+          {
+            "task": "Vancomycin 1g IV STAT",
+            "category": "Medication",
+            "reason": "Cover resistant Streptococcus pneumoniae"
+          },
+          {
+            "task": "Dexamethasone 0.15mg/kg IV",
+            "category": "Medication",
+            "reason": "Reduce inflammation and improve outcomes - give before or with antibiotics"
+          },
+          {
+            "task": "Blood cultures x 2 STAT",
+            "category": "Lab",
+            "reason": "Identify causative organism - draw before antibiotics if possible"
+          },
+          {
+            "task": "CT Head without contrast STAT",
+            "category": "Imaging",
+            "reason": "Rule out mass lesion or elevated ICP before LP"
+          }
+        ],
+        "urgent_tasks": [
+          {
+            "task": "Lumbar puncture",
+            "category": "Procedure",
+            "reason": "CSF analysis for cell count, protein, glucose, gram stain, culture"
+          },
+          {
+            "task": "CBC with differential",
+            "category": "Lab",
+            "reason": "Evaluate leukocytosis and left shift"
+          },
+          {
+            "task": "BMP",
+            "category": "Lab",
+            "reason": "Assess electrolytes, glucose for CSF comparison"
+          },
+          {
+            "task": "Coagulation studies",
+            "category": "Lab",
+            "reason": "Evaluate for DIC, safe LP"
+          },
+          {
+            "task": "Lactate",
+            "category": "Lab",
+            "reason": "Assess for sepsis"
+          },
+          {
+            "task": "Procalcitonin",
+            "category": "Lab",
+            "reason": "Bacterial infection marker"
+          },
+          {
+            "task": "ICU admission",
+            "category": "Disposition",
+            "reason": "Close monitoring for neurological deterioration"
+          },
+          {
+            "task": "Neurology consult",
+            "category": "Referral",
+            "reason": "Specialist management of CNS infection"
+          },
+          {
+            "task": "Infectious Disease consult",
+            "category": "Referral",
+            "reason": "Antibiotic optimization and duration planning"
+          }
+        ],
+        "routine_tasks": [
+          {
+            "task": "Repeat LP in 24-48 hours",
+            "category": "Procedure",
+            "reason": "Assess response to therapy if not improving"
+          },
+          {
+            "task": "Contact tracing",
+            "category": "Public Health",
+            "reason": "Prophylaxis for close contacts if N. meningitidis confirmed"
+          },
+          {
+            "task": "Hearing evaluation",
+            "category": "Referral",
+            "reason": "Assess for sensorineural hearing loss post-meningitis"
+          },
+          {
+            "task": "Neuropsychological follow-up",
+            "category": "Referral",
+            "reason": "Evaluate for cognitive sequelae"
+          }
+        ]
+      }
+    }
+  }
+}
