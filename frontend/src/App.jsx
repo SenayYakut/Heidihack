@@ -30,12 +30,20 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import PatientCard from './components/PatientCard';
 import ClinicalForm from './components/ClinicalForm';
 import AIInsights from './components/AIInsights';
+import PatientList from './components/PatientList';
 import apiClient from './api/client';
+import { mockPatients } from './data/mockPatients';
 
 function App() {
   // =============================================================================
   // STATE MANAGEMENT
   // =============================================================================
+
+  // Selected patient from list - null means show patient list
+  const [selectedPatient, setSelectedPatient] = useState(null);
+
+  // Completed patients tracking
+  const [completedPatients, setCompletedPatients] = useState([]);
 
   // Patient data from API - fetched once on mount
   const [patientData, setPatientData] = useState(null);
@@ -92,25 +100,40 @@ function App() {
   // =============================================================================
 
   /**
-   * Fetch patient data on component mount
-   * This provides context for the clinical form and AI analysis
+   * Set patient data when a patient is selected from the list
    */
   useEffect(() => {
-    fetchPatientData();
-  }, []);
-
-  const fetchPatientData = async () => {
-    try {
-      setIsLoading(prev => ({ ...prev, patient: true }));
-      const response = await apiClient.get('/api/patient');
-      setPatientData(response.data);
-    } catch (err) {
-      console.error('Failed to fetch patient data:', err);
-      setError('Unable to load patient data. Please refresh the page.');
-    } finally {
+    if (selectedPatient) {
+      setPatientData(selectedPatient);
       setIsLoading(prev => ({ ...prev, patient: false }));
     }
-  };
+  }, [selectedPatient]);
+
+  /**
+   * Handle patient selection from the list
+   */
+  const handleSelectPatient = useCallback((patient) => {
+    setSelectedPatient(patient);
+    setAnalysisResults(null);
+    setError(null);
+  }, []);
+
+  /**
+   * Handle going back to patient list
+   */
+  const handleBackToList = useCallback(() => {
+    if (analysisResults) {
+      // Mark patient as completed if analysis was done
+      setCompletedPatients(prev =>
+        prev.includes(selectedPatient.id) ? prev : [...prev, selectedPatient.id]
+      );
+    }
+    setSelectedPatient(null);
+    setPatientData(null);
+    setAnalysisResults(null);
+    setError(null);
+    setResetTrigger(prev => prev + 1);
+  }, [analysisResults, selectedPatient]);
 
   // =============================================================================
   // FORM SUBMISSION & ANALYSIS
@@ -363,16 +386,30 @@ function App() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
-              <button
-                onClick={handleNewEncounterClick}
-                className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                aria-label="Start new encounter"
-              >
-                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                New Encounter
-              </button>
+              {selectedPatient && (
+                <button
+                  onClick={handleBackToList}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                  aria-label="Back to patient list"
+                >
+                  <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Patient List
+                </button>
+              )}
+              {selectedPatient && (
+                <button
+                  onClick={handleNewEncounterClick}
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  aria-label="Start new encounter"
+                >
+                  <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Reset Form
+                </button>
+              )}
               <span className="text-sm text-gray-500 hidden md:block">
                 {new Date().toLocaleDateString('en-US', {
                   weekday: 'long',
@@ -426,87 +463,106 @@ function App() {
       )}
 
       {/* =================================================================== */}
-      {/* PATIENT CARD */}
+      {/* MAIN CONTENT */}
       {/* =================================================================== */}
-      <div className="bg-gray-100 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <PatientCard />
-        </div>
-      </div>
-
-      {/* =================================================================== */}
-      {/* MAIN CONTENT - Side by Side Layout */}
-      {/* =================================================================== */}
-      <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column - Clinical Form */}
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Clinical Documentation</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Complete the form and click "Generate AI Analysis" to receive insights.
-                <span className="hidden sm:inline"> Press Cmd/Ctrl + Enter to submit.</span>
-              </p>
+      {!selectedPatient ? (
+        /* Patient List View */
+        <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Today's Patients</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Select a patient to begin clinical documentation
+            </p>
+          </div>
+          <PatientList
+            patients={mockPatients}
+            completedPatients={completedPatients}
+            onSelectPatient={handleSelectPatient}
+          />
+        </main>
+      ) : (
+        /* Clinical Documentation View */
+        <>
+          {/* PATIENT CARD */}
+          <div className="bg-gray-100 border-b border-gray-200">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <PatientCard patient={patientData} />
             </div>
+          </div>
 
-            {/* Form with disabled overlay during analysis */}
-            <div className={`relative ${isLoading.analysis ? 'pointer-events-none' : ''}`}>
-              {isLoading.analysis && (
-                <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-lg">
-                  <div className="text-center">
-                    <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <p className="text-sm text-gray-600">Processing...</p>
+          {/* Side by Side Layout */}
+          <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column - Clinical Form */}
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Clinical Documentation</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Complete the form and click "Generate AI Analysis" to receive insights.
+                    <span className="hidden sm:inline"> Press Cmd/Ctrl + Enter to submit.</span>
+                  </p>
+                </div>
+
+                {/* Form with disabled overlay during analysis */}
+                <div className={`relative ${isLoading.analysis ? 'pointer-events-none' : ''}`}>
+                  {isLoading.analysis && (
+                    <div className="absolute inset-0 bg-white bg-opacity-75 z-10 flex items-center justify-center rounded-lg">
+                      <div className="text-center">
+                        <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p className="text-sm text-gray-600">Processing...</p>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={formRef}>
+                    <ClinicalForm
+                      patientContext={patientData}
+                      onSubmit={handleFormSubmit}
+                      resetTrigger={resetTrigger}
+                    />
                   </div>
                 </div>
-              )}
-              <div ref={formRef}>
-                <ClinicalForm
-                  patientContext={patientData}
-                  onSubmit={handleFormSubmit}
-                  resetTrigger={resetTrigger}
-                />
+              </div>
+
+              {/* Right Column - AI Insights */}
+              <div
+                className="space-y-4"
+                ref={insightsRef}
+                tabIndex={-1}
+                aria-label="Analysis results"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {analysisResults
+                      ? 'Review the generated insights and recommendations below.'
+                      : 'Complete the clinical form to generate AI-powered analysis.'}
+                  </p>
+                </div>
+
+                {/* Show insights or placeholder */}
+                {analysisResults ? (
+                  <div className="slide-in-right">
+                    <AIInsights analysisData={analysisResults} />
+                  </div>
+                ) : (
+                  <div className="card p-8 text-center bg-gray-50 border-2 border-dashed border-gray-300">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    <h3 className="mt-4 text-sm font-medium text-gray-900">No Analysis Yet</h3>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Fill out the clinical form on the left and click "Generate AI Analysis" to see results here.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-
-          {/* Right Column - AI Insights */}
-          <div
-            className="space-y-4"
-            ref={insightsRef}
-            tabIndex={-1}
-            aria-label="Analysis results"
-          >
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                {analysisResults
-                  ? 'Review the generated insights and recommendations below.'
-                  : 'Complete the clinical form to generate AI-powered analysis.'}
-              </p>
-            </div>
-
-            {/* Show insights or placeholder */}
-            {analysisResults ? (
-              <div className="slide-in-right">
-                <AIInsights analysisData={analysisResults} />
-              </div>
-            ) : (
-              <div className="card p-8 text-center bg-gray-50 border-2 border-dashed border-gray-300">
-                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <h3 className="mt-4 text-sm font-medium text-gray-900">No Analysis Yet</h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Fill out the clinical form on the left and click "Generate AI Analysis" to see results here.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </main>
+          </main>
+        </>
+      )}
 
       {/* =================================================================== */}
       {/* FOOTER */}

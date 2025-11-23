@@ -1,109 +1,18 @@
-import { useState, useEffect } from 'react';
-import apiClient from '../api/client';
-
-export default function PatientCard() {
-  const [patient, setPatient] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchPatientData();
-  }, []);
-
-  const fetchPatientData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await apiClient.get('/api/patient');
-      setPatient(response.data);
-    } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to fetch patient data');
-      console.error('Error fetching patient:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="card" aria-busy="true" aria-label="Loading patient information">
-        {/* Skeleton Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <div className="h-6 skeleton w-48 mb-2"></div>
-              <div className="h-4 skeleton w-64"></div>
-            </div>
-            <div className="h-6 skeleton w-24 rounded-full"></div>
-          </div>
-        </div>
-
-        {/* Skeleton Content */}
-        <div className="p-6 space-y-6">
-          {/* Medical History Skeleton */}
-          <div>
-            <div className="h-4 skeleton w-32 mb-3"></div>
-            <div className="flex gap-2">
-              <div className="h-6 skeleton w-20 rounded-full"></div>
-              <div className="h-6 skeleton w-24 rounded-full"></div>
-            </div>
-          </div>
-
-          {/* Medications Skeleton */}
-          <div>
-            <div className="h-4 skeleton w-36 mb-3"></div>
-            <div className="space-y-2">
-              <div className="h-4 skeleton w-40"></div>
-              <div className="h-4 skeleton w-48"></div>
-            </div>
-          </div>
-
-          {/* Allergies Skeleton */}
-          <div>
-            <div className="h-4 skeleton w-24 mb-3"></div>
-            <div className="h-6 skeleton w-20 rounded-full"></div>
-          </div>
-
-          {/* Vitals Skeleton */}
-          <div>
-            <div className="h-4 skeleton w-28 mb-3"></div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="bg-gray-50 rounded-lg p-3">
-                  <div className="h-3 skeleton w-16 mb-2"></div>
-                  <div className="h-6 skeleton w-12"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="card p-6 border-red-200 bg-red-50">
-        <div className="flex items-center">
-          <svg className="h-5 w-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-red-700 font-medium">Error loading patient data</span>
-        </div>
-        <p className="text-red-600 text-sm mt-2">{error}</p>
-        <button
-          onClick={fetchPatientData}
-          className="mt-3 text-sm text-red-600 hover:text-red-800 underline"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
-
+export default function PatientCard({ patient }) {
   if (!patient) {
     return null;
   }
+
+  // Normalize vitals - handle both API format and mockPatients format
+  const vitals = patient.vitals || {};
+  const normalizedVitals = {
+    blood_pressure: vitals.blood_pressure || vitals.bp,
+    heart_rate: vitals.heart_rate || vitals.hr,
+    temperature: vitals.temperature || vitals.temp,
+    respiratory_rate: vitals.respiratory_rate || vitals.rr,
+    oxygen_saturation: vitals.oxygen_saturation || vitals.spo2,
+    weight: vitals.weight
+  };
 
   return (
     <div className="card fade-in" role="region" aria-labelledby="patient-name">
@@ -195,40 +104,40 @@ export default function PatientCard() {
               Recent Vitals
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {patient.vitals.blood_pressure && (
+              {normalizedVitals.blood_pressure && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Blood Pressure</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.blood_pressure}</p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.blood_pressure}</p>
                 </div>
               )}
-              {patient.vitals.heart_rate && (
+              {normalizedVitals.heart_rate && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Heart Rate</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.heart_rate} <span className="text-sm font-normal">bpm</span></p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.heart_rate} <span className="text-sm font-normal">bpm</span></p>
                 </div>
               )}
-              {patient.vitals.temperature && (
+              {normalizedVitals.temperature && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Temperature</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.temperature}°F</p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.temperature}°F</p>
                 </div>
               )}
-              {patient.vitals.respiratory_rate && (
+              {normalizedVitals.respiratory_rate && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Resp. Rate</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.respiratory_rate} <span className="text-sm font-normal">/min</span></p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.respiratory_rate} <span className="text-sm font-normal">/min</span></p>
                 </div>
               )}
-              {patient.vitals.oxygen_saturation && (
+              {normalizedVitals.oxygen_saturation && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">SpO2</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.oxygen_saturation}%</p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.oxygen_saturation}%</p>
                 </div>
               )}
-              {patient.vitals.weight && (
+              {normalizedVitals.weight && (
                 <div className="bg-gray-50 rounded-lg p-3">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Weight</p>
-                  <p className="text-lg font-semibold text-gray-900 mt-1">{patient.vitals.weight} <span className="text-sm font-normal">lbs</span></p>
+                  <p className="text-lg font-semibold text-gray-900 mt-1">{normalizedVitals.weight} <span className="text-sm font-normal">lbs</span></p>
                 </div>
               )}
             </div>
