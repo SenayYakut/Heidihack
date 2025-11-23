@@ -31,6 +31,9 @@ import PatientCard from './components/PatientCard';
 import ClinicalForm from './components/ClinicalForm';
 import AIInsights from './components/AIInsights';
 import PatientList from './components/PatientList';
+import Calendar from './components/Calendar';
+import AppointmentModal from './components/AppointmentModal';
+import FollowUpRecommendations from './components/FollowUpRecommendations';
 import apiClient from './api/client';
 import { mockPatients } from './data/mockPatients';
 
@@ -45,6 +48,24 @@ function App() {
   // Completed patients tracking
   const [completedPatients, setCompletedPatients] = useState([]);
 
+  // Current view: 'list' | 'form' | 'calendar'
+  const [currentView, setCurrentView] = useState('list');
+
+  // Appointments for calendar
+  const [appointments, setAppointments] = useState([]);
+
+  // Appointment modal state
+  const [appointmentModal, setAppointmentModal] = useState({
+    isOpen: false,
+    selectedDate: null,
+    appointments: [],
+    mode: 'view',
+    prefillData: null
+  });
+
+  // Follow-up recommendations from AI analysis
+  const [followUpRecommendations, setFollowUpRecommendations] = useState([]);
+
   // Patient data from API - fetched once on mount
   const [patientData, setPatientData] = useState(null);
 
@@ -53,7 +74,7 @@ function App() {
 
   // Loading states for different operations
   const [isLoading, setIsLoading] = useState({
-    patient: true,
+    patient: false,
     analysis: false
   });
 
@@ -115,7 +136,9 @@ function App() {
   const handleSelectPatient = useCallback((patient) => {
     setSelectedPatient(patient);
     setAnalysisResults(null);
+    setFollowUpRecommendations([]);
     setError(null);
+    setCurrentView('form');
   }, []);
 
   /**
@@ -131,9 +154,109 @@ function App() {
     setSelectedPatient(null);
     setPatientData(null);
     setAnalysisResults(null);
+    setFollowUpRecommendations([]);
     setError(null);
     setResetTrigger(prev => prev + 1);
+    setCurrentView('list');
   }, [analysisResults, selectedPatient]);
+
+  /**
+   * Convert mockPatients to calendar appointments
+   */
+  const getPatientAppointments = useCallback(() => {
+    return mockPatients.map(patient => ({
+      id: `patient-${patient.id}`,
+      patientId: patient.id.toString(),
+      patientName: patient.name,
+      date: patient.appointmentTime,
+      duration: 30,
+      type: 'initial',
+      status: completedPatients.includes(patient.id) ? 'completed' : 'scheduled',
+      notes: patient.medicalHistory ? patient.medicalHistory.join(', ') : '',
+      isFollowUp: false
+    }));
+  }, [completedPatients]);
+
+  /**
+   * Fetch appointments from backend and merge with patient appointments
+   */
+  const fetchAppointments = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/api/appointments');
+      const apiAppointments = response.data || [];
+
+      // Merge API appointments with patient appointments
+      const patientAppointments = getPatientAppointments();
+      setAppointments([...patientAppointments, ...apiAppointments]);
+    } catch (err) {
+      console.error('Failed to fetch appointments:', err);
+      // Fall back to just patient appointments
+      setAppointments(getPatientAppointments());
+    }
+  }, [getPatientAppointments]);
+
+  // Fetch appointments on mount and when completed patients change
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments, completedPatients]);
+
+  /**
+   * Handle calendar date click
+   */
+  const handleDateClick = useCallback((date, dayAppointments) => {
+    setAppointmentModal({
+      isOpen: true,
+      selectedDate: date,
+      appointments: dayAppointments,
+      mode: 'view',
+      prefillData: null
+    });
+  }, []);
+
+  /**
+   * Handle appointment click
+   */
+  const handleAppointmentClick = useCallback((appointment) => {
+    // Could open appointment details modal
+    console.log('Appointment clicked:', appointment);
+  }, []);
+
+  /**
+   * Handle adding appointment
+   */
+  const handleAddAppointment = useCallback(async (appointmentData) => {
+    try {
+      const response = await apiClient.post('/api/appointments', appointmentData);
+      // Refresh appointments
+      await fetchAppointments();
+      setAppointmentModal(prev => ({ ...prev, isOpen: false }));
+      announceToScreenReader('Appointment added successfully');
+    } catch (err) {
+      console.error('Failed to add appointment:', err);
+      setError('Failed to add appointment. Please try again.');
+    }
+  }, [fetchAppointments]);
+
+  /**
+   * Handle adding follow-up to calendar
+   */
+  const handleAddFollowUp = useCallback(async (followUpData) => {
+    try {
+      await apiClient.post('/api/appointments', followUpData);
+      await fetchAppointments();
+      announceToScreenReader('Follow-up appointment added to calendar');
+    } catch (err) {
+      console.error('Failed to add follow-up:', err);
+      throw err;
+    }
+  }, [fetchAppointments]);
+
+  /**
+   * Close appointment modal
+   */
+  const closeAppointmentModal = useCallback(() => {
+    setAppointmentModal(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   // =============================================================================
   // FORM SUBMISSION & ANALYSIS
@@ -186,6 +309,11 @@ function App() {
 
       setAnalysisResults(response.data);
       setAnalysisProgress(null);
+
+      // Set follow-up recommendations if available
+      if (response.data.follow_up_recommendations) {
+        setFollowUpRecommendations(response.data.follow_up_recommendations);
+      }
 
       // Scroll to insights section after results load
       setTimeout(() => {
@@ -398,16 +526,30 @@ function App() {
                   Patient List
                 </button>
               )}
+              <button
+                onClick={() => setCurrentView(currentView === 'calendar' ? 'list' : 'calendar')}
+                className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                  currentView === 'calendar'
+                    ? 'text-white bg-blue-600 border border-blue-600 hover:bg-blue-700'
+                    : 'text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100'
+                }`}
+                aria-label="View calendar"
+              >
+                <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Calendar
+              </button>
               {selectedPatient && (
                 <button
                   onClick={handleNewEncounterClick}
-                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  aria-label="Start new encounter"
+                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                  aria-label="Reset form"
                 >
                   <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
-                  Reset Form
+                  Reset
                 </button>
               )}
               <span className="text-sm text-gray-500 hidden md:block">
@@ -465,7 +607,22 @@ function App() {
       {/* =================================================================== */}
       {/* MAIN CONTENT */}
       {/* =================================================================== */}
-      {!selectedPatient ? (
+      {currentView === 'calendar' ? (
+        /* Calendar View */
+        <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Appointment Calendar</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              View and manage all scheduled appointments
+            </p>
+          </div>
+          <Calendar
+            appointments={appointments}
+            onDateClick={handleDateClick}
+            onAppointmentClick={handleAppointmentClick}
+          />
+        </main>
+      ) : !selectedPatient ? (
         /* Patient List View */
         <main id="main-content" className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
           <div className="mb-6">
@@ -544,8 +701,17 @@ function App() {
 
                 {/* Show insights or placeholder */}
                 {analysisResults ? (
-                  <div className="slide-in-right">
+                  <div className="slide-in-right space-y-6">
                     <AIInsights analysisData={analysisResults} />
+
+                    {/* Follow-up Recommendations */}
+                    {followUpRecommendations.length > 0 && (
+                      <FollowUpRecommendations
+                        recommendations={followUpRecommendations}
+                        onAddToCalendar={handleAddFollowUp}
+                        patientContext={patientData}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="card p-8 text-center bg-gray-50 border-2 border-dashed border-gray-300">
@@ -671,6 +837,20 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* =================================================================== */}
+      {/* APPOINTMENT MODAL */}
+      {/* =================================================================== */}
+      <AppointmentModal
+        isOpen={appointmentModal.isOpen}
+        onClose={closeAppointmentModal}
+        selectedDate={appointmentModal.selectedDate}
+        appointments={appointmentModal.appointments}
+        onAddAppointment={handleAddAppointment}
+        mode={appointmentModal.mode}
+        patients={mockPatients}
+        prefillData={appointmentModal.prefillData}
+      />
     </div>
   );
 }
