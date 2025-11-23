@@ -4,5 +4,7 @@ python-dotenv
 httpx
 pydantic
 python-multipart
-openai
+openai>=1.0.0
 tenacity
+faiss-cpu>=1.7.4
+numpy>=1.24.0

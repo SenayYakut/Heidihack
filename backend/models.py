@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 
 
 class TranscriptRequest(BaseModel):
@@ -30,10 +30,10 @@ class HPIData(BaseModel):
 # Vital signs data structure
 class VitalsData(BaseModel):
     bp: Optional[str] = ""
-    hr: Optional[str] = ""
-    temp: Optional[str] = ""
-    spo2: Optional[str] = ""
-    rr: Optional[str] = ""
+    hr: Optional[Union[str, int, float]] = ""
+    temp: Optional[Union[str, int, float]] = ""
+    spo2: Optional[Union[str, int, float]] = ""
+    rr: Optional[Union[str, int, float]] = ""
 
 
 # Physical exam data structure

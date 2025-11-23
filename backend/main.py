@@ -21,6 +21,7 @@ from models import (
 )
 from mock_data import MOCK_PATIENT
 from validate_mock_data import validate_mock_data
+from rag_engine import ClinicalRAG
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -51,6 +52,9 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 # Global mock data storage
 MOCK_DATA = None
 MOCK_DATA_PATH = os.path.join(os.path.dirname(__file__), "patients-data.json")
+
+# Global RAG engine
+RAG_ENGINE = None
 
 
 def load_mock_data() -> dict:
@@ -843,23 +847,25 @@ async def analyze_encounter(request: AnalysisRequest):
     if not patient_dict.get('name'):
         patient_dict = get_mock_patient()
 
-    # In DEVELOPMENT_MODE, use pre-defined mock API responses
-    if DEVELOPMENT_MODE and MOCK_DATA:
-        logger.info("DEVELOPMENT_MODE: Using mock API response")
-        mock_response = select_mock_response(form_data.chief_complaint)
+    # Use RAG engine for dynamic analysis
+    if RAG_ENGINE:
+        logger.info("Using RAG engine for clinical analysis")
+        try:
+            # Generate analysis using RAG
+            rag_response = RAG_ENGINE.generate_analysis(form_dict, patient_dict)
 
-        if mock_response:
-            # Parse clinical note from mock response
+            # Parse clinical note
+            note_data = rag_response.get("clinical_note", {})
             clinical_note = ClinicalNote(
-                subjective=mock_response.get("clinical_note", ""),
-                objective="",
-                assessment="",
-                plan=""
+                subjective=note_data.get("subjective", ""),
+                objective=note_data.get("objective", ""),
+                assessment=note_data.get("assessment", ""),
+                plan=note_data.get("plan", "")
             )
 
             # Parse ICD-10 codes
             icd_codes = []
-            for code_data in mock_response.get("icd10_codes", []):
+            for code_data in rag_response.get("icd10_codes", []):
                 icd_codes.append(ICD10Code(
                     code=code_data.get("code", ""),
                     description=code_data.get("description", "")
@@ -867,38 +873,39 @@ async def analyze_encounter(request: AnalysisRequest):
 
             # Parse differential diagnoses
             differential_diagnoses = []
-            for dx in mock_response.get("differential_diagnoses", []):
+            for dx in rag_response.get("differential_diagnoses", []):
                 differential_diagnoses.append(DifferentialDiagnosis(
-                    name=dx.get("diagnosis", "Unknown"),
-                    risk=dx.get("risk_level", "MEDIUM"),
-                    supporting_factors=dx.get("supporting_evidence", []),
+                    name=dx.get("name", "Unknown"),
+                    risk=dx.get("risk", "MEDIUM"),
+                    supporting_factors=dx.get("supporting_factors", []),
                     recommended_actions=dx.get("recommended_actions", [])
                 ))
 
-            # Parse tasks
-            tasks = mock_response.get("tasks", {})
+            # Parse recommended actions
+            actions = rag_response.get("recommended_actions", {})
+
             immediate_tasks = []
-            for task in tasks.get("immediate_tasks", []):
+            for task in actions.get("immediate", []):
                 immediate_tasks.append(RecommendedAction(
-                    name=task.get("task", ""),
+                    name=task.get("name", ""),
                     category=task.get("category", ""),
-                    details=task.get("reason", "")
+                    details=task.get("details", "")
                 ))
 
             urgent_tasks = []
-            for task in tasks.get("urgent_tasks", []):
+            for task in actions.get("urgent", []):
                 urgent_tasks.append(RecommendedAction(
-                    name=task.get("task", ""),
+                    name=task.get("name", ""),
                     category=task.get("category", ""),
-                    details=task.get("reason", "")
+                    details=task.get("details", "")
                 ))
 
             routine_tasks = []
-            for task in tasks.get("routine_tasks", []):
+            for task in actions.get("routine", []):
                 routine_tasks.append(RecommendedAction(
-                    name=task.get("task", ""),
+                    name=task.get("name", ""),
                     category=task.get("category", ""),
-                    details=task.get("reason", "")
+                    details=task.get("details", "")
                 ))
 
             recommended_actions = RecommendedActions(
@@ -907,12 +914,17 @@ async def analyze_encounter(request: AnalysisRequest):
                 routine=routine_tasks
             )
 
+            logger.info("RAG analysis completed successfully")
             return AnalysisResponse(
                 clinical_note=clinical_note,
                 icd_codes=icd_codes,
                 differential_diagnoses=differential_diagnoses,
                 recommended_actions=recommended_actions
             )
+
+        except Exception as e:
+            logger.error(f"RAG analysis failed: {e}")
+            # Fall through to legacy analysis methods below
 
     try:
         # Step 1: Generate clinical note with Heidi
@@ -1051,7 +1063,9 @@ async def health_check():
         "heidi_configured": bool(HEIDI_API_KEY),
         "openai_configured": bool(OPENAI_API_KEY),
         "development_mode": DEVELOPMENT_MODE,
-        "mock_data_loaded": MOCK_DATA is not None
+        "mock_data_loaded": MOCK_DATA is not None,
+        "rag_enabled": RAG_ENGINE is not None,
+        "rag_chunks": len(RAG_ENGINE.chunks) if RAG_ENGINE else 0
     }
 
 
@@ -1100,6 +1114,22 @@ async def startup_event():
             logger.info("Mock data validation passed")
             logger.info(f"Loaded {len(MOCK_DATA.get('scenarios', []))} scenarios")
             logger.info(f"Loaded {len(MOCK_DATA.get('api_responses', {}))} API responses")
+
+    # Initialize RAG engine if OpenAI API key is available
+    global RAG_ENGINE
+    if OPENAI_API_KEY:
+        logger.info("Initializing RAG engine...")
+        try:
+            RAG_ENGINE = ClinicalRAG(
+                knowledge_base_path=MOCK_DATA_PATH,
+                openai_api_key=OPENAI_API_KEY
+            )
+            logger.info("RAG engine initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize RAG engine: {e}")
+            RAG_ENGINE = None
+    else:
+        logger.warning("OpenAI API key not configured - RAG engine disabled")
 
     logger.info("=" * 60)
     logger.info("Startup complete")

@@ -189,7 +189,16 @@ function App() {
       } else if (err.code === 'ERR_NETWORK' || !navigator.onLine) {
         errorMessage = 'Unable to connect. Please check your connection.';
       } else if (err.response?.data?.detail) {
-        errorMessage = err.response.data.detail;
+        // Handle FastAPI validation errors (422)
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          // Pydantic validation errors return an array of error objects
+          errorMessage = detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+        } else if (typeof detail === 'string') {
+          errorMessage = detail;
+        } else if (typeof detail === 'object') {
+          errorMessage = detail.msg || detail.message || JSON.stringify(detail);
+        }
       }
 
       setError(errorMessage);
