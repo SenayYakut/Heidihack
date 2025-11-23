@@ -137,3 +137,16 @@ class LegacyAnalysisResponse(BaseModel):
     icd10_codes: List[ICD10Code]
     differential_diagnoses: List[str]
     tasks: List[Task]
+
+
+# Appointment model
+class Appointment(BaseModel):
+    id: Optional[str] = None
+    patientId: str
+    patientName: str
+    date: str
+    duration: int = 30
+    type: str = "initial"
+    status: str = "scheduled"
+    notes: Optional[str] = ""
+    isFollowUp: bool = False

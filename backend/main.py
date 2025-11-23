@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import uuid
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -8,7 +9,7 @@ import httpx
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from models import (
+from .models import (
     TranscriptRequest,
     ExtractedFormData,
     AnalysisRequest,
@@ -18,10 +19,11 @@ from models import (
     DifferentialDiagnosis,
     RecommendedAction,
     RecommendedActions,
+    Appointment,
 )
-from mock_data import MOCK_PATIENT
-from validate_mock_data import validate_mock_data
-from rag_engine import ClinicalRAG
+from .mock_data import MOCK_PATIENT
+from .validate_mock_data import validate_mock_data
+from .rag_engine import ClinicalRAG
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +36,7 @@ app = FastAPI(title="Clinical AI Assistant", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:3002"],
+    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:3001", "http://localhost:3002"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,6 +57,9 @@ MOCK_DATA_PATH = os.path.join(os.path.dirname(__file__), "patients-data.json")
 
 # Global RAG engine
 RAG_ENGINE = None
+
+# Global appointments storage (in-memory)
+appointments_db: list = []
 
 
 def load_mock_data() -> dict:
@@ -1053,6 +1058,26 @@ PLAN:
     except Exception as e:
         logger.error(f"Unexpected error in analyze_encounter: {str(e)}")
         raise HTTPException(status_code=500, detail="An unexpected error occurred during analysis")
+
+
+@app.get("/api/appointments")
+async def get_appointments():
+    """Get all appointments."""
+    return appointments_db
+
+
+@app.post("/api/appointments")
+async def create_appointment(appointment: Appointment):
+    """Create a new appointment."""
+    # Generate ID if not provided
+    if not appointment.id:
+        appointment.id = str(uuid.uuid4())
+
+    # Convert to dict and add to storage
+    appointment_dict = appointment.model_dump()
+    appointments_db.append(appointment_dict)
+
+    return appointment_dict
 
 
 @app.get("/health")

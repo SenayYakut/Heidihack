@@ -1,3 +1,21 @@
+# Virtual environments
 venv/
+env/
+*.pyc
+__pycache__/
+
+# Environment variables
 .env
-.env.example
+
+# Node modules
+node_modules/
+
+# Cache directories
+.rag_cache/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
